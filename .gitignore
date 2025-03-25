@@ -3,6 +3,8 @@
 # Ignore environment files
 .env.local
 .history
+.env.development
+.env
 
 # dependencies
 /node_modules

@@ -12,28 +12,80 @@ Depending on whether they're logged in or not will determine what else will be s
 3/20/25
 Further iterations will include other things but for now this is all that I'll include.
 
-*/
-"use client";
+*/ "use client";
 
-import React, { useState } from "react";
+import React, { useEffect, useState } from "react";
 import Link from "next/link";
+import { useAuth } from "../context/AuthContext";
 
 const Navbar = () => {
-  const [menuOpen, setMenuOpen] = useState(false);
+  const { isLoggedIn } = useAuth();
+  const [hasMounted, setHasMounted] = useState(false);
+
+  // Set hasMounted to true once the component is mounted on the client.
+  useEffect(() => {
+    setHasMounted(true);
+  }, []);
+
+  // While not mounted, return null (or a placeholder) so that the server and client match.
+  if (!hasMounted) {
+    return null;
+  }
 
   return (
-    <nav className="navbar">
+    <nav
+      style={{
+        display: "flex",
+        alignItems: "center",
+        justifyContent: "space-between",
+        padding: "1rem",
+        backgroundColor: "lightblue",
+      }}
+    >
       <div className="navbar-left">
-        <h1>This is NavBar</h1>
-        <Link href="/">AI Storyteller (Home Page)</Link>
+        <Link
+          href="/"
+          style={{
+            color: "white",
+            fontSize: "1.5rem",
+            fontWeight: "bold",
+            textDecoration: "none",
+          }}
+        >
+          AI Storyteller Generator
+        </Link>
       </div>
-      <div className="navbar-right">
-        <button onClick={() => setMenuOpen(!menuOpen)}>Menu</button>
-        {menuOpen && (
-          <div className="menu">
-            <Link href="/login">Login</Link>
-            <Link href="/signup">Sign Up</Link>
-          </div>
+      <div style={{ display: "flex", gap: "1rem" }}>
+        {isLoggedIn ? (
+          <>
+            <Link
+              href="/profile"
+              style={{ color: "white", textDecoration: "none" }}
+            >
+              Profile
+            </Link>
+            <Link
+              href="/logout"
+              style={{ color: "white", textDecoration: "none" }}
+            >
+              Logout
+            </Link>
+          </>
+        ) : (
+          <>
+            <Link
+              href="/login"
+              style={{ color: "white", textDecoration: "none" }}
+            >
+              Login
+            </Link>
+            <Link
+              href="/signup"
+              style={{ color: "white", textDecoration: "none" }}
+            >
+              Sign Up
+            </Link>
+          </>
         )}
       </div>
     </nav>
