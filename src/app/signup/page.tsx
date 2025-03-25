@@ -6,11 +6,14 @@ export default function SignUpPage() {
   const router = useRouter();
 
   // State for form fields
+  const [fName, setfName] = useState("");
+  const [lName, setlName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [confirmPassword, setConfirmPassword] = useState("");
   // Placeholder for future verification code logic
   const [verificationCode, setVerificationCode] = useState("");
+  const [error, setError] = useState("");
 
   // State to control visibility of passwords
   const [showPassword, setShowPassword] = useState(false);
@@ -18,20 +21,73 @@ export default function SignUpPage() {
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
+
     if (password !== confirmPassword) {
-      alert("Passwords don't match!");
+      setError("Passwords don't match!");
       return;
     }
-    // Here you would normally call your API for sign-up
-    console.log("Signing up with:", email, password);
-    // After successful sign-up, redirect to login (or directly log in)
-    router.push("/login");
+
+    try {
+      const res = await fetch("/api/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        // Send the form data as JSON
+        body: JSON.stringify({ email, password, fName, lName }),
+      });
+
+      if (res.ok) {
+        // Redirect to the login page or another page upon success
+        router.push("/login");
+      } else {
+        const data = await res.json();
+        setError(data.error || "Sign up failed");
+      }
+    } catch (err) {
+      setError("An unexpected error occurred.");
+      console.error(err);
+    }
   };
 
   return (
     <div style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto" }}>
       <h1>This is Sign Up Page</h1>
       <form onSubmit={handleSignUp}>
+        <div style={{ marginBottom: "1rem" }}>
+          <label htmlFor="fName">First Name:</label>
+          <input
+            type="fName"
+            id="fName"
+            value={fName}
+            onChange={(e) => setfName(e.target.value)}
+            placeholder="Enter your First Name"
+            required
+            style={{
+              width: "100%",
+              padding: "0.5rem",
+              marginTop: "0.5rem",
+              color: "black",
+            }}
+          />
+        </div>
+        <div style={{ marginBottom: "1rem" }}>
+          <label htmlFor="lName">Last Name:</label>
+          <input
+            type="lName"
+            id="lName"
+            value={lName}
+            onChange={(e) => setlName(e.target.value)}
+            placeholder="Enter your Last Name"
+            required
+            style={{
+              width: "100%",
+              padding: "0.5rem",
+              marginTop: "0.5rem",
+              color: "black",
+            }}
+          />
+        </div>
         <div style={{ marginBottom: "1rem" }}>
           <label htmlFor="email">Email:</label>
           <input
