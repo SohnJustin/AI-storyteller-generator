@@ -1,6 +1,7 @@
 // src/app/layout.tsx
 import "./globals.css";
 import Navbar from "./components/Navbar";
+import { AuthProvider } from "./context/AuthContext";
 
 export const metadata = {
   title: "AI Storyteller",
@@ -19,8 +20,10 @@ export default function RootLayout({
         <meta name="description" content={metadata.description} />
       </head>
       <body>
-        <Navbar />
-        {children}
+        <AuthProvider>
+          <Navbar />
+          {children}
+        </AuthProvider>
       </body>
     </html>
   );
