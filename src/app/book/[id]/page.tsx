@@ -8,7 +8,7 @@ export default async function BookByIdPage({
   searchParams,
 }: {
   params: { id: string };
-  searchParams: { mode?: string };
+  searchParams: Promise<{ mode?: string }>;
 }) {
   const story = await prisma.story.findUnique({
     where: { id: params.id },
@@ -23,7 +23,8 @@ export default async function BookByIdPage({
     );
   }
 
-  const mode = (searchParams.mode ?? "readAlong").toLowerCase();
+  const sp = await searchParams;
+  const mode = (sp.mode ?? "readAlong").toLowerCase();
 
   return (
     <div style={{ padding: 24 }}>
