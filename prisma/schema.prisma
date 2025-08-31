@@ -27,4 +27,13 @@ model User {
   // Optional: If users can create or save stories, you can add a relation:
   // stories          Story[]   // Assuming you have a Story model defined elsewhere
 }
-
+model Story {
+  id        String   @id @default(cuid())
+  title     String
+  body      String   // the full story text
+  createdAt DateTime @default(now())
+  expiresAt DateTime // when you consider it “temporary”
+  // Optional: who created it (for multi-user)
+  // userId    String?
+  // @@index([expiresAt])
+}
