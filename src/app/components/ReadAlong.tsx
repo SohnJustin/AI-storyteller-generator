@@ -1,9 +1,8 @@
 // components/ReadAlong.tsx
 "use client";
 import React, { useMemo, useRef, useEffect, useState } from "react";
-// ❌ do not import from API routes or server pages here
 // import StoryGenerator from "../generate-story/page";
-import { useTTS } from "../api/text-to-speech/route"; // If this is a server file, move the hook into /app/hooks/useTTS.ts
+import { useTTS } from "@/app/hooks/useTTS";
 
 export default function ReadAlong({ text }: { text: string }) {
   // Strip markdown for TTS + highlighting (prevents reading “asterisk”)
