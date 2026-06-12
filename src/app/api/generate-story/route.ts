@@ -29,7 +29,14 @@ export async function POST(req: Request) {
     const apiResponse = await axios.post(
       OPEN_ROUTER_API_URL,
       {
-        model: "deepseek/deepseek-r1:free",
+        // Free models get throttled upstream individually, so list several
+        // and let OpenRouter fall back to the first available one.
+        // OpenRouter caps this fallback array at 3 entries.
+        models: [
+          "openai/gpt-oss-120b:free",
+          "openai/gpt-oss-20b:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+        ],
         messages: [{ role: "user", content: promptData }],
       },
       {
