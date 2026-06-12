@@ -15,49 +15,32 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
-import { useAuth } from "../context/AuthContext";
+import { signIn } from "next-auth/react";
 
 const LoginPage = () => {
   const router = useRouter();
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { setIsLoggedIn } = useAuth();
   const [error, setError] = useState("");
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    // Here you would normally call your login API
-    console.log(`Logging in with Email: ${email}, Password: ${password}`);
-    // On successful login, redirect to the home page (or profile page)
+    setError("");
 
-    // If email is not in the database, return an error
-    try {
-      const res = await fetch("/api/login", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-        },
-        body: JSON.stringify({ email, password }),
-      });
+    const result = await signIn("credentials", {
+      email,
+      password,
+      redirect: false,
+    });
 
-      if (res.ok) {
-        // Update global state to mark user as logged in
-        setIsLoggedIn(true);
-        // Redirect to home page
-        router.push("/");
-      } else {
-        const data = await res.json();
-        setError(data.error || "Login failed");
-      }
-    } catch (err) {
-      console.error("An unexpected error occurred:", err);
-      setError("An unexpected error occurred.");
+    if (result?.error) {
+      setError("Invalid email or password");
+      return;
     }
-    // If password is incorrect, return an error
 
-    // If both are correct, log the user in
-    // If the user is logged in, setLogin to true
-    // Redirect to the home page
+    // Success — refresh session state and go home.
+    router.push("/");
+    router.refresh();
   };
 
   return (
@@ -65,7 +48,10 @@ const LoginPage = () => {
       className="login-page"
       style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto" }}
     >
-      <h1>This is Login Page</h1>
+      <h1>*WORK IN PROGRESS*</h1>
+      {error && (
+        <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>
+      )}
       <form onSubmit={handleSubmit}>
         <div style={{ marginBottom: "1rem" }}>
           <label htmlFor="email">Email:</label>

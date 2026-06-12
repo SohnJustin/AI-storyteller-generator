@@ -17,6 +17,7 @@ model User {
   verificationToken String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  stories           Story[]
 }
 
 model Story {
@@ -25,4 +26,9 @@ model Story {
   body      String
   createdAt DateTime @default(now())
   expiresAt DateTime
+  // Optional owner — null for stories created before accounts / by guests.
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

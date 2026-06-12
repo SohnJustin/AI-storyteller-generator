@@ -2,10 +2,11 @@
 
 import React, { useEffect, useState } from "react";
 import Link from "next/link";
-import { useAuth } from "../context/AuthContext";
+import { useSession, signOut } from "next-auth/react";
 
 const Navbar = () => {
-  const { isLoggedIn } = useAuth();
+  const { status } = useSession();
+  const isLoggedIn = status === "authenticated";
   const [hasMounted, setHasMounted] = useState(false);
 
   useEffect(() => {
@@ -31,9 +32,12 @@ const Navbar = () => {
             <Link href="/profile" className="text-white no-underline">
               Profile
             </Link>
-            <Link href="/logout" className="text-white no-underline">
+            <button
+              onClick={() => signOut({ callbackUrl: "/" })}
+              className="text-white no-underline cursor-pointer"
+            >
               Logout
-            </Link>
+            </button>
           </>
         ) : (
           <>

@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { prisma } from "@/lib/prismaClient";
+import { auth } from "@/auth";
 
 const OPEN_ROUTER_API_KEY = process.env.STORY_GENERATOR_API_KEY;
 const OPEN_ROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -11,6 +12,10 @@ export async function POST(req: Request) {
   try {
     // 1. Parse the request body properly (depending on Next.js version, you might need await req.json())
     const { length, prompt, genre } = await req.json();
+
+    // Associate the story with the signed-in user, if any.
+    const session = await auth();
+    const userId = session?.user?.id ? Number(session.user.id) : null;
 
     // 2. Create the prompt
     const promptData = `Create a ${length} length ${genre} story with the following prompt: "${prompt}"
@@ -115,6 +120,7 @@ export async function POST(req: Request) {
           title: (title ?? "Your Story").toString(),
           body: (story ?? "").toString(),
           expiresAt,
+          userId,
         },
         select: { id: true, title: true },
       });
