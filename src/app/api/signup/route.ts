@@ -1,9 +1,7 @@
 // src/app/api/signup/route.ts
 import { NextResponse } from "next/server";
-import { PrismaClient } from "@prisma/client";
+import { prisma } from "@/lib/prismaClient";
 import bcrypt from "bcryptjs";
-
-const prisma = new PrismaClient();
 
 export async function POST(request: Request, res: NextResponse) {
   try {
@@ -40,7 +38,6 @@ export async function POST(request: Request, res: NextResponse) {
     return NextResponse.json({ message: "User created", user: newUser });
   } catch (error: any) {
     console.error("Error creating user:", error);
-    console.log("DATABASE_URL:", process.env.DATABASE_URL);
     return NextResponse.json(
       { error: "Failed to create user" },
       { status: 500 }
