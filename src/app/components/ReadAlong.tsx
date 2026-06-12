@@ -1,6 +1,13 @@
 // components/ReadAlong.tsx
 "use client";
-import React, { useMemo, useRef, useEffect, useState } from "react";
+import React, {
+  useMemo,
+  useRef,
+  useEffect,
+  useLayoutEffect,
+  useCallback,
+  useState,
+} from "react";
 // import StoryGenerator from "../generate-story/page";
 import { useTTS } from "@/app/hooks/useTTS";
 
@@ -14,7 +21,13 @@ function normalizeForTTS(s: string) {
     .trim(); // trim leading/trailing
 }
 
-export default function ReadAlong({ text }: { text: string }) {
+export default function ReadAlong({
+  text,
+  title,
+}: {
+  text: string;
+  title?: string;
+}) {
   // Strip markdown for TTS + highlighting (prevents reading “asterisk”)
   const rawPlain = useMemo(
     () => text.replace(/\*\*(.*?)\*\*/g, "$1").replace(/\*(.*?)\*/g, "$1"),
@@ -27,7 +40,13 @@ export default function ReadAlong({ text }: { text: string }) {
 
   const [voiceName, setVoiceName] = useState("");
   const [rate, setRate] = useState(1);
-  const containerRef = useRef<HTMLDivElement>(null);
+
+  // Pagination: the viewport clips one spread; the pages layer is translated.
+  const viewportRef = useRef<HTMLDivElement>(null);
+  const pagesRef = useRef<HTMLDivElement>(null);
+  const [page, setPage] = useState(0); // current spread index
+  const [spreads, setSpreads] = useState(1); // total spreads
+  const [step, setStep] = useState(0); // px to translate per spread
 
   const [usingFallback, setUsingFallback] = useState(false);
   const [fallbackIdx, setFallbackIdx] = useState(-1);
@@ -96,13 +115,55 @@ export default function ReadAlong({ text }: { text: string }) {
 
   const activeIdx = usingFallback ? fallbackIdx : boundaryIdx;
 
+  // Lay out the columns so two pages fill the viewport, then measure how many
+  // spreads (two-page turns) the text needs. step = px translated per spread.
+  const GAP = 64;
+  const measure = useCallback(() => {
+    const vp = viewportRef.current;
+    const pg = pagesRef.current;
+    if (!vp || !pg) return;
+    const w = vp.clientWidth;
+    // One column per spread on narrow screens, two otherwise.
+    const twoUp = w >= 640;
+    const gap = twoUp ? GAP : 0;
+    const colW = twoUp ? (w - gap) / 2 : w;
+    pg.style.columnWidth = `${colW}px`;
+    pg.style.columnGap = `${gap}px`;
+    const spreadStep = w + gap; // advancing one spread = two columns
+    const total = Math.max(1, Math.ceil(pg.scrollWidth / spreadStep));
+    setStep(spreadStep);
+    setSpreads(total);
+    setPage((p) => Math.min(p, total - 1));
+  }, []);
+
+  useLayoutEffect(() => {
+    measure();
+    // Re-measure once fonts finish loading (metrics shift column count).
+    if (typeof document !== "undefined" && "fonts" in document) {
+      document.fonts.ready.then(measure).catch(() => {});
+    }
+  }, [measure, ttsText]);
+
   useEffect(() => {
-    if (activeIdx < 0) return;
-    const el = containerRef.current?.querySelector(
+    window.addEventListener("resize", measure);
+    return () => window.removeEventListener("resize", measure);
+  }, [measure]);
+
+  // Reset to the first spread whenever the story text changes.
+  useEffect(() => {
+    setPage(0);
+  }, [ttsText]);
+
+  // When the spoken word crosses onto the next spread, flip the page.
+  useEffect(() => {
+    if (activeIdx < 0 || step <= 0) return;
+    const el = pagesRef.current?.querySelector(
       `[data-i="${activeIdx}"]`
     ) as HTMLElement | null;
-    el?.scrollIntoView({ block: "center", behavior: "smooth" });
-  }, [activeIdx]);
+    if (!el) return;
+    const targetSpread = Math.floor(el.offsetLeft / step);
+    setPage((p) => (targetSpread !== p ? targetSpread : p));
+  }, [activeIdx, step]);
 
   // If real boundary events start coming in, stop fallback
   useEffect(() => {
@@ -121,17 +182,10 @@ export default function ReadAlong({ text }: { text: string }) {
     return <div>Text-to-speech isn’t supported in this browser.</div>;
 
   return (
-    <div>
-      <div
-        style={{
-          display: "flex",
-          gap: 8,
-          alignItems: "center",
-          marginBottom: 12,
-          flexWrap: "wrap",
-        }}
-      >
+    <div className="book">
+      <div className="book-toolbar">
         <button
+          className="book-btn"
           onClick={() => {
             // Start TTS
             speak({ voiceName, rate });
@@ -163,16 +217,11 @@ export default function ReadAlong({ text }: { text: string }) {
               }
             }, 800);
           }}
-          style={{
-            padding: "6px 10px",
-            borderRadius: 6,
-            border: "1px solid rgba(0,0,0,0.25)",
-            cursor: "pointer",
-          }}
         >
           ▶️ Play
         </button>
         <button
+          className="book-btn"
           onClick={() => {
             pause();
             if (fallbackTickRef.current) {
@@ -180,16 +229,11 @@ export default function ReadAlong({ text }: { text: string }) {
               fallbackTickRef.current = null;
             }
           }}
-          style={{
-            padding: "6px 10px",
-            borderRadius: 6,
-            border: "1px solid rgba(0,0,0,0.25)",
-            cursor: "pointer",
-          }}
         >
           ⏸️ Pause
         </button>
         <button
+          className="book-btn"
           onClick={() => {
             resume();
             if (usingFallback) {
@@ -206,16 +250,11 @@ export default function ReadAlong({ text }: { text: string }) {
               }, interval);
             }
           }}
-          style={{
-            padding: "6px 10px",
-            borderRadius: 6,
-            border: "1px solid rgba(0,0,0,0.25)",
-            cursor: "pointer",
-          }}
         >
           ▶️ Resume
         </button>
         <button
+          className="book-btn"
           onClick={() => {
             stop();
             if (fallbackTimerRef.current) {
@@ -229,24 +268,11 @@ export default function ReadAlong({ text }: { text: string }) {
             setUsingFallback(false);
             setFallbackIdx(-1);
           }}
-          style={{
-            padding: "6px 10px",
-            borderRadius: 6,
-            border: "1px solid rgba(0,0,0,0.25)",
-            cursor: "pointer",
-          }}
         >
           ⏹️ Stop
         </button>
 
-        <label
-          style={{
-            display: "flex",
-            alignItems: "center",
-            gap: 6,
-            marginLeft: 10,
-          }}
-        >
+        <label style={{ marginLeft: 10 }}>
           Voice:
           <select
             value={voiceName}
@@ -261,7 +287,7 @@ export default function ReadAlong({ text }: { text: string }) {
           </select>
         </label>
 
-        <label style={{ display: "flex", alignItems: "center", gap: 6 }}>
+        <label>
           Speed:
           <input
             type="range"
@@ -271,36 +297,53 @@ export default function ReadAlong({ text }: { text: string }) {
             value={rate}
             onChange={(e) => setRate(parseFloat(e.target.value))}
           />
-          <span style={{ opacity: 0.7 }}>{rate.toFixed(2)}x</span>
+          <span style={{ opacity: 0.8 }}>{rate.toFixed(2)}x</span>
         </label>
       </div>
-      <div
-        ref={containerRef}
-        style={{
-          lineHeight: 1.8,
-          fontSize: 18,
-          maxHeight: 360,
-          overflow: "auto",
-        }}
-      >
-        {tokens.map((t, i) =>
-          t.isWord ? (
-            <span
-              key={i}
-              data-i={i}
-              style={{
-                backgroundColor: i === activeIdx ? "yellow" : "transparent",
-                borderBottom: i === activeIdx ? "2px solid #caa76a" : "none",
-                opacity: i === activeIdx ? 1 : 0.8,
-                transition: "all 0.15s ease",
-              }}
-            >
-              {t.str}
-            </span>
-          ) : (
-            <span key={i}>{t.str}</span>
-          )
-        )}
+
+      <div className="book-spread">
+        <div className="book-content" ref={viewportRef}>
+          <div
+            className="book-pages"
+            ref={pagesRef}
+            style={{ transform: `translateX(-${page * step}px)` }}
+          >
+            {title && <h1 className="book-title">{title}</h1>}
+            {tokens.map((t, i) =>
+              t.isWord ? (
+                <span
+                  key={i}
+                  data-i={i}
+                  className={i === activeIdx ? "book-word-active" : undefined}
+                >
+                  {t.str}
+                </span>
+              ) : (
+                <span key={i}>{t.str}</span>
+              )
+            )}
+          </div>
+        </div>
+      </div>
+
+      <div className="book-nav">
+        <button
+          className="book-btn"
+          onClick={() => setPage((p) => Math.max(0, p - 1))}
+          disabled={page <= 0}
+        >
+          ◀ Prev
+        </button>
+        <span className="page-ind">
+          Pages {page * 2 + 1}–{page * 2 + 2} of {spreads * 2}
+        </span>
+        <button
+          className="book-btn"
+          onClick={() => setPage((p) => Math.min(spreads - 1, p + 1))}
+          disabled={page >= spreads - 1}
+        >
+          Next ▶
+        </button>
       </div>
     </div>
   );
