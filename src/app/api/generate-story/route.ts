@@ -111,8 +111,12 @@ export async function POST(req: Request) {
 
     // 6. Persist to DB (temporary) so client can route to /book/[id]
     //    If you haven't created the Story model yet, see the schema notes in chat.
+    // Logged-in users keep their stories permanently (null); guest stories
+    // expire after a TTL so anonymous content doesn't pile up.
     const ttlMinutes = 180;
-    const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
+    const expiresAt = userId
+      ? null
+      : new Date(Date.now() + ttlMinutes * 60_000);
     let created;
     try {
       created = await prisma.story.create({

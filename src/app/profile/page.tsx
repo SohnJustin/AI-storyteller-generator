@@ -47,7 +47,7 @@ export default async function ProfilePage() {
       ) : (
         <ul style={{ listStyle: "none", padding: 0, margin: 0 }}>
           {stories.map((story) => {
-            const expired = story.expiresAt < now;
+            const expired = story.expiresAt ? story.expiresAt < now : false;
             return (
               <li
                 key={story.id}

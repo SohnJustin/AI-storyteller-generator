@@ -25,7 +25,8 @@ model Story {
   title     String
   body      String
   createdAt DateTime @default(now())
-  expiresAt DateTime
+  // null = never expires (owned by a logged-in user); a date = guest TTL.
+  expiresAt DateTime?
   // Optional owner — null for stories created before accounts / by guests.
   userId    Int?
   user      User?    @relation(fields: [userId], references: [id])

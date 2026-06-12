@@ -1,21 +1,21 @@
-// src/app/book/[id]/page.tsx
 import { prisma } from "@/lib/prismaClient";
 import ReadAlong from "@/app/components/ReadAlong";
-// import ReadMyself from "@/app/components/ReadMyself";
-
 export default async function BookByIdPage({
   params,
   searchParams,
 }: {
-  params: { id: string };
+  params: Promise<{ id: string }>;
   searchParams: Promise<{ mode?: string }>;
 }) {
+  const p = await params;
+  const sp = await searchParams;
+
   const story = await prisma.story.findUnique({
-    where: { id: params.id },
+    where: { id: p.id },
     select: { title: true, body: true, expiresAt: true },
   });
 
-  if (!story || story.expiresAt < new Date()) {
+  if (!story || (story.expiresAt && story.expiresAt < new Date())) {
     return (
       <div style={{ padding: 24 }}>
         This story has expired or doesn’t exist.
@@ -23,9 +23,7 @@ export default async function BookByIdPage({
     );
   }
 
-  const sp = await searchParams;
   const mode = (sp.mode ?? "readAlong").toLowerCase();
-
   return (
     <div style={{ padding: 24 }}>
       <h1 style={{ marginBottom: 16 }}>{story.title}</h1>
