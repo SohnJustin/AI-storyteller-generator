@@ -1,20 +1,7 @@
-// This is the login page component. It contains a simple form with email and password fields.
-// When the form is submitted, it logs the email and password to the console and redirects to the home page.
-//
-// The form is controlled by two state variables, email and password, which are updated as the user types in the input fields.
-// The handleSubmit function is called when the form is submitted, preventing the default form submission behavior and logging the email and password to the console.
-// Finally, the router.push("/") function is called to redirect the user to the home page.
-//
-// The form is styled using inline styles for simplicity, but you can customize the styles as needed.
-// You can also add validation logic to the form fields to ensure that the user enters valid data.
-//
-// To use this component, you can import it into your app and render it as needed.
-// For example, you can create a login page that includes this component and any other content you want to display.
-// You can also add additional logic to handle the login process, such as calling an API to authenticate the user.
-
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 import { signIn } from "next-auth/react";
 
 const LoginPage = () => {
@@ -45,52 +32,70 @@ const LoginPage = () => {
 
   return (
     <div
-      className="login-page"
-      style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto" }}
+      className="relative min-h-screen bg-cover bg-center flex items-center justify-center p-4"
+      style={{ backgroundImage: "url('/backgroundimg.jpg')" }}
     >
-      <h1>*WORK IN PROGRESS*</h1>
-      {error && (
-        <p style={{ color: "red", marginBottom: "1rem" }}>{error}</p>
-      )}
-      <form onSubmit={handleSubmit}>
-        <div style={{ marginBottom: "1rem" }}>
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label htmlFor="password">Password:</label>
-          <input
-            type="password"
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
-        </div>
-        <button type="submit" style={{ padding: "0.75rem 1.5rem" }}>
-          Login
-        </button>
-      </form>
+      {/* Dark overlay for contrast, matching the landing page */}
+      <div className="absolute inset-0 bg-black/70" />
+
+      <div className="relative w-full max-w-md rounded-lg border border-yellow-800/60 bg-black/60 p-8 text-white shadow-xl backdrop-blur-sm">
+        <h1 className="mb-2 text-center text-3xl">Welcome Back</h1>
+        <p className="mb-6 text-center text-sm text-gray-300">
+          Sign in to continue your story.
+        </p>
+
+        {error && (
+          <p className="mb-4 rounded bg-red-900/40 px-3 py-2 text-center text-sm text-red-300">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div>
+            <label htmlFor="email" className="mb-1 block text-sm">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className="w-full rounded border border-gray-300 bg-white/95 p-3 text-black outline-none focus:border-yellow-700 focus:ring-1 focus:ring-yellow-700"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="password" className="mb-1 block text-sm">
+              Password
+            </label>
+            <input
+              type="password"
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className="w-full rounded border border-gray-300 bg-white/95 p-3 text-black outline-none focus:border-yellow-700 focus:ring-1 focus:ring-yellow-700"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full cursor-pointer rounded bg-yellow-800 py-3 text-lg text-white transition duration-300 ease-in-out hover:bg-yellow-700"
+          >
+            Login
+          </button>
+        </form>
+
+        <p className="mt-6 text-center text-sm text-gray-300">
+          Don&apos;t have an account?{" "}
+          <Link href="/signup" className="text-yellow-500 hover:text-yellow-400">
+            Sign up
+          </Link>
+        </p>
+      </div>
     </div>
   );
 };
