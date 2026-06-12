@@ -1,6 +1,7 @@
 "use client";
 import React, { useState } from "react";
 import { useRouter } from "next/navigation";
+import Link from "next/link";
 
 export default function SignUpPage() {
   const router = useRouter();
@@ -50,153 +51,153 @@ export default function SignUpPage() {
     }
   };
 
+  const inputClasses =
+    "w-full rounded border border-gray-300 bg-white/95 p-3 text-black outline-none focus:border-yellow-700 focus:ring-1 focus:ring-yellow-700";
+
   return (
-    <div style={{ padding: "2rem", maxWidth: "400px", margin: "0 auto" }}>
-      <h1>This is Sign Up Page</h1>
-      <form onSubmit={handleSignUp}>
-        <div style={{ marginBottom: "1rem" }}>
-          <label htmlFor="fName">First Name:</label>
-          <input
-            type="fName"
-            id="fName"
-            value={fName}
-            onChange={(e) => setfName(e.target.value)}
-            placeholder="Enter your First Name"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label htmlFor="lName">Last Name:</label>
-          <input
-            type="lName"
-            id="lName"
-            value={lName}
-            onChange={(e) => setlName(e.target.value)}
-            placeholder="Enter your Last Name"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
-        </div>
-        <div style={{ marginBottom: "1rem" }}>
-          <label htmlFor="email">Email:</label>
-          <input
-            type="email"
-            id="email"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            placeholder="Enter your email"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
-        </div>
+    <div
+      className="relative min-h-screen bg-cover bg-center flex items-center justify-center p-4"
+      style={{ backgroundImage: "url('/backgroundimg.jpg')" }}
+    >
+      {/* Dark overlay for contrast, matching the landing page */}
+      <div className="absolute inset-0 bg-black/70" />
 
-        {/* Password Field with Show/Hide Toggle */}
-        <div style={{ marginBottom: "1rem", position: "relative" }}>
-          <label htmlFor="password">Password:</label>
-          <input
-            type={showPassword ? "text" : "password"}
-            id="password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="Enter your password"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
+      <div className="relative my-8 w-full max-w-md rounded-lg border border-yellow-800/60 bg-black/60 p-8 text-white shadow-xl backdrop-blur-sm">
+        <h1 className="mb-2 text-center text-3xl">Create Your Account</h1>
+        <p className="mb-6 text-center text-sm text-gray-300">
+          Begin crafting your own adventures.
+        </p>
+
+        {error && (
+          <p className="mb-4 rounded bg-red-900/40 px-3 py-2 text-center text-sm text-red-300">
+            {error}
+          </p>
+        )}
+
+        <form onSubmit={handleSignUp} className="space-y-4">
+          <div>
+            <label htmlFor="fName" className="mb-1 block text-sm">
+              First Name
+            </label>
+            <input
+              type="text"
+              id="fName"
+              value={fName}
+              onChange={(e) => setfName(e.target.value)}
+              placeholder="Enter your first name"
+              required
+              className={inputClasses}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="lName" className="mb-1 block text-sm">
+              Last Name
+            </label>
+            <input
+              type="text"
+              id="lName"
+              value={lName}
+              onChange={(e) => setlName(e.target.value)}
+              placeholder="Enter your last name"
+              required
+              className={inputClasses}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="email" className="mb-1 block text-sm">
+              Email
+            </label>
+            <input
+              type="email"
+              id="email"
+              value={email}
+              onChange={(e) => setEmail(e.target.value)}
+              placeholder="Enter your email"
+              required
+              className={inputClasses}
+            />
+          </div>
+
+          {/* Password Field with Show/Hide Toggle */}
+          <div className="relative">
+            <label htmlFor="password" className="mb-1 block text-sm">
+              Password
+            </label>
+            <input
+              type={showPassword ? "text" : "password"}
+              id="password"
+              value={password}
+              onChange={(e) => setPassword(e.target.value)}
+              placeholder="Enter your password"
+              required
+              className={inputClasses}
+            />
+            <button
+              type="button"
+              onClick={() => setShowPassword(!showPassword)}
+              className="absolute right-3 top-9 cursor-pointer text-sm text-gray-600 hover:text-black"
+            >
+              {showPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          {/* Confirm Password Field with Show/Hide Toggle */}
+          <div className="relative">
+            <label htmlFor="confirmPassword" className="mb-1 block text-sm">
+              Confirm Password
+            </label>
+            <input
+              type={showConfirmPassword ? "text" : "password"}
+              id="confirmPassword"
+              value={confirmPassword}
+              onChange={(e) => setConfirmPassword(e.target.value)}
+              placeholder="Confirm your password"
+              required
+              className={inputClasses}
+            />
+            <button
+              type="button"
+              onClick={() => setShowConfirmPassword(!showConfirmPassword)}
+              className="absolute right-3 top-9 cursor-pointer text-sm text-gray-600 hover:text-black"
+            >
+              {showConfirmPassword ? "Hide" : "Show"}
+            </button>
+          </div>
+
+          {/* Verification Code Field (Placeholder) */}
+          <div>
+            <label htmlFor="verificationCode" className="mb-1 block text-sm">
+              Verification Code{" "}
+              <span className="text-gray-400">(coming soon)</span>
+            </label>
+            <input
+              type="text"
+              id="verificationCode"
+              value={verificationCode}
+              onChange={(e) => setVerificationCode(e.target.value)}
+              placeholder="(User will receive an email for this)"
+              disabled
+              className="w-full cursor-not-allowed rounded border border-gray-500 bg-white/40 p-3 text-black placeholder-gray-600"
+            />
+          </div>
 
           <button
-            type="button"
-            onClick={() => setShowPassword(!showPassword)}
-            style={{
-              position: "absolute",
-              right: "10px",
-              top: "35px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "black",
-            }}
+            type="submit"
+            className="w-full cursor-pointer rounded bg-yellow-800 py-3 text-lg text-white transition duration-300 ease-in-out hover:bg-yellow-700"
           >
-            {showPassword ? "Hide" : "Show"}
+            Sign Up
           </button>
-        </div>
+        </form>
 
-        {/* Confirm Password Field with Show/Hide Toggle */}
-        <div style={{ marginBottom: "1rem", position: "relative" }}>
-          <label htmlFor="confirmPassword">Confirm Password:</label>
-          <input
-            type={showConfirmPassword ? "text" : "password"}
-            id="confirmPassword"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            placeholder="Confirm your password"
-            required
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-              color: "black",
-            }}
-          />
-          <button
-            type="button"
-            onClick={() => setShowConfirmPassword(!showConfirmPassword)}
-            style={{
-              position: "absolute",
-              right: "10px",
-              top: "35px",
-              background: "none",
-              border: "none",
-              cursor: "pointer",
-              color: "black",
-            }}
-          >
-            {showConfirmPassword ? "Hide" : "Show"}
-          </button>
-        </div>
-
-        {/* Verification Code Field (Placeholder) */}
-        <div style={{ marginBottom: "1rem" }}>
-          <label htmlFor="verificationCode">Verification Code (Future):</label>
-          <input
-            type="text"
-            id="verificationCode"
-            value={verificationCode}
-            onChange={(e) => setVerificationCode(e.target.value)}
-            placeholder="(User will receive an email for this)"
-            disabled // Placeholder for future verification code logic
-            style={{
-              width: "100%",
-              padding: "0.5rem",
-              marginTop: "0.5rem",
-            }}
-          />
-        </div>
-
-        <button type="submit" style={{ padding: "0.75rem 1.5rem" }}>
-          Sign Up
-        </button>
-      </form>
+        <p className="mt-6 text-center text-sm text-gray-300">
+          Already have an account?{" "}
+          <Link href="/login" className="text-yellow-500 hover:text-yellow-400">
+            Login
+          </Link>
+        </p>
+      </div>
     </div>
   );
 }

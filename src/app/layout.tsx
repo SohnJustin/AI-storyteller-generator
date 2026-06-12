@@ -1,7 +1,7 @@
 // src/app/layout.tsx
 import "./globals.css";
 import Navbar from "./components/Navbar";
-import { AuthProvider } from "./context/AuthContext";
+import Providers from "./components/Providers";
 
 // IMPORTING FONT FROM GOOGLE FONTS (Giving Medieval vibes)
 import { Cinzel, EB_Garamond } from "next/font/google";
@@ -32,10 +32,10 @@ export default function RootLayout({
         <meta name="description" content={metadata.description} />
       </head>
       <body className={`${cinzel.className}, ${ebGaramond.className}`}>
-        <AuthProvider>
+        <Providers>
           <Navbar />
           {children}
-        </AuthProvider>
+        </Providers>
       </body>
     </html>
   );

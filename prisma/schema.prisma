@@ -3,8 +3,9 @@ generator client {
 }
 
 datasource db {
-  provider = "postgresql"
-  url      = env("DATABASE_URL")
+  provider  = "postgresql"
+  url       = env("DATABASE_URL")
+  directUrl = env("DIRECT_URL")
 }
 
 model User {
@@ -17,6 +18,7 @@ model User {
   verificationToken String?
   createdAt         DateTime @default(now())
   updatedAt         DateTime @updatedAt
+  stories           Story[]
 }
 
 model Story {
@@ -24,5 +26,11 @@ model Story {
   title     String
   body      String
   createdAt DateTime @default(now())
-  expiresAt DateTime
+  // null = never expires (owned by a logged-in user); a date = guest TTL.
+  expiresAt DateTime?
+  // Optional owner — null for stories created before accounts / by guests.
+  userId    Int?
+  user      User?    @relation(fields: [userId], references: [id])
+
+  @@index([userId])
 }

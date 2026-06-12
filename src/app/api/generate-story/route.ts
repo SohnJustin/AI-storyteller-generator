@@ -3,6 +3,7 @@
 import { NextResponse } from "next/server";
 import axios from "axios";
 import { prisma } from "@/lib/prismaClient";
+import { auth } from "@/auth";
 
 const OPEN_ROUTER_API_KEY = process.env.STORY_GENERATOR_API_KEY;
 const OPEN_ROUTER_API_URL = "https://openrouter.ai/api/v1/chat/completions";
@@ -11,6 +12,10 @@ export async function POST(req: Request) {
   try {
     // 1. Parse the request body properly (depending on Next.js version, you might need await req.json())
     const { length, prompt, genre } = await req.json();
+
+    // Associate the story with the signed-in user, if any.
+    const session = await auth();
+    const userId = session?.user?.id ? Number(session.user.id) : null;
 
     // 2. Create the prompt
     const promptData = `Create a ${length} length ${genre} story with the following prompt: "${prompt}"
@@ -24,7 +29,14 @@ export async function POST(req: Request) {
     const apiResponse = await axios.post(
       OPEN_ROUTER_API_URL,
       {
-        model: "deepseek/deepseek-r1:free",
+        // Free models get throttled upstream individually, so list several
+        // and let OpenRouter fall back to the first available one.
+        // OpenRouter caps this fallback array at 3 entries.
+        models: [
+          "openai/gpt-oss-120b:free",
+          "openai/gpt-oss-20b:free",
+          "meta-llama/llama-3.3-70b-instruct:free",
+        ],
         messages: [{ role: "user", content: promptData }],
       },
       {
@@ -106,8 +118,12 @@ export async function POST(req: Request) {
 
     // 6. Persist to DB (temporary) so client can route to /book/[id]
     //    If you haven't created the Story model yet, see the schema notes in chat.
+    // Logged-in users keep their stories permanently (null); guest stories
+    // expire after a TTL so anonymous content doesn't pile up.
     const ttlMinutes = 180;
-    const expiresAt = new Date(Date.now() + ttlMinutes * 60_000);
+    const expiresAt = userId
+      ? null
+      : new Date(Date.now() + ttlMinutes * 60_000);
     let created;
     try {
       created = await prisma.story.create({
@@ -115,6 +131,7 @@ export async function POST(req: Request) {
           title: (title ?? "Your Story").toString(),
           body: (story ?? "").toString(),
           expiresAt,
+          userId,
         },
         select: { id: true, title: true },
       });

@@ -12,7 +12,7 @@ export async function GET(
   });
 
   if (!story) return NextResponse.json({ error: "Not found" }, { status: 404 });
-  if (story.expiresAt < new Date()) {
+  if (story.expiresAt && story.expiresAt < new Date()) {
     // Option 1: treat as gone
     return NextResponse.json({ error: "Expired" }, { status: 410 });
   }
