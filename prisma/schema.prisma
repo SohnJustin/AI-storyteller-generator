@@ -1,9 +1,3 @@
-// This is your Prisma schema file,
-// learn more about it in the docs: https://pris.ly/d/prisma-schema
-
-// Looking for ways to speed up your queries, or scale easily with your serverless or edge functions?
-// Try Prisma Accelerate: https://pris.ly/cli/accelerate-init
-
 generator client {
   provider = "prisma-client-js"
 }
@@ -14,26 +8,21 @@ datasource db {
 }
 
 model User {
-  id                Int       @id @default(autoincrement())
-  email             String    @unique
-  password          String    // This should store a hashed password
-  fName             String?   // First name
-  lName             String?   // Last name
-  isVerified        Boolean   @default(false) // Useful if you plan to verify email addresses
-  verificationToken String?   // Optional token for email verification processes
-  createdAt         DateTime  @default(now())
-  updatedAt         DateTime  @updatedAt
-
-  // Optional: If users can create or save stories, you can add a relation:
-  // stories          Story[]   // Assuming you have a Story model defined elsewhere
+  id                Int      @id @default(autoincrement())
+  email             String   @unique
+  password          String
+  fName             String?
+  lName             String?
+  isVerified        Boolean  @default(false)
+  verificationToken String?
+  createdAt         DateTime @default(now())
+  updatedAt         DateTime @updatedAt
 }
+
 model Story {
-  id        String   @id @default(cuid())
+  id        String   @id @default(uuid())
   title     String
-  body      String   // the full story text
+  body      String
   createdAt DateTime @default(now())
-  expiresAt DateTime // when you consider it “temporary”
-  // Optional: who created it (for multi-user)
-  // userId    String?
-  // @@index([expiresAt])
+  expiresAt DateTime
 }
