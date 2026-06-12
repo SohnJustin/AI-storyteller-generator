@@ -3,21 +3,26 @@
 A full-stack web application that generates AI-driven short stories from a user
 prompt. You pick a **genre** and **length**, describe the story you want, and the
 app calls a large language model to write it, persists it to a database, and
-renders it on a shareable book page with **text-to-speech** narration.
+renders it in a **paginated open-book reader** with **text-to-speech** narration.
 
 ## Features
 
 - **Story generation** — sends your prompt, genre, and length to the
-  [OpenRouter](https://openrouter.ai) API (currently the `deepseek/deepseek-r1:free`
-  model) and parses the returned story.
-- **Shareable story pages** — each generated story is saved to a PostgreSQL
-  database (via Prisma) and rendered at a dynamic `/book/[id]` URL with a short
-  TTL before it expires.
+  [OpenRouter](https://openrouter.ai) API and parses the returned story. Uses a
+  free-model fallback list (currently `openai/gpt-oss-120b:free` →
+  `gpt-oss-20b:free` → `meta-llama/llama-3.3-70b-instruct:free`) so a throttled
+  provider automatically falls back to the next.
+- **Open-book reader** — each story renders at a dynamic `/book/[id]` URL as a
+  two-page parchment spread inside a leather cover, with Prev/Next page turning.
 - **Text-to-speech** — client-side narration built on the browser's Web Speech
-  API (`src/app/hooks/useTTS.ts`) with play/pause/resume controls.
-- **Read Along / Read Myself** modes — `ReadAlong` highlights and auto-scrolls
-  text as it is narrated; `ReadMyself` is a self-paced reading view.
-- **Accounts (in progress)** — signup/login routes with bcrypt-hashed passwords.
+  API (`src/app/hooks/useTTS.ts`) with play/pause/resume and a word-by-word
+  highlight that auto-turns the page as it reads.
+- **Accounts** — email/password authentication via Auth.js (NextAuth v5) with
+  bcrypt-hashed passwords and JWT sessions. Logged-in users get a `/profile`
+  page listing their stories.
+- **Story persistence** — stories are saved to PostgreSQL via Prisma. Stories
+  created while logged in are kept permanently; guest (anonymous) stories expire
+  after a TTL.
 
 ## Tech Stack
 
@@ -26,6 +31,7 @@ renders it on a shareable book page with **text-to-speech** narration.
 | Framework        | Next.js 15 (App Router) + React 19 + TypeScript         |
 | Styling          | Tailwind CSS v4, Framer Motion                          |
 | Backend          | Next.js API routes (`src/app/api/*`)                    |
+| Auth             | Auth.js / NextAuth v5 (Credentials provider, JWT)       |
 | Database / ORM   | PostgreSQL + Prisma                                      |
 | AI provider      | OpenRouter (OpenAI-compatible chat completions API)     |
 | Text-to-speech   | Web Speech API (browser, client-side)                   |
@@ -35,8 +41,8 @@ renders it on a shareable book page with **text-to-speech** narration.
 ## 1. Project Title and Description
 
 **AI StoryTeller Generator** — see the description and features above. In short:
-give it a prompt, a genre, and a length, and it generates a story you can read or
-have read aloud to you, accessible at a unique shareable URL.
+give it a prompt, a genre, and a length, and it generates a story you can read in
+an open-book reader or have read aloud to you, accessible at a unique URL.
 
 ---
 
@@ -45,50 +51,48 @@ have read aloud to you, accessible at a unique shareable URL.
 ### Prerequisites
 
 - **Node.js 18+** and a package manager (`npm`, `yarn`, or `pnpm`)
-- A running **PostgreSQL** database (local or hosted, e.g. Supabase / Neon / Railway)
+- A **PostgreSQL** database (local or hosted, e.g. Supabase / Neon / Railway)
 - An **OpenRouter API key** — sign up at [openrouter.ai](https://openrouter.ai)
 
 ### Steps
 
-Clone the repository:
+Clone the repository and install dependencies:
 
 ```bash
 git clone https://github.com/SohnJustin/AI-storyteller-generator.git
 cd AI-storyteller-generator
-```
-
-Install dependencies:
-
-```bash
 npm install
 ```
 
-> **Note:** the login/signup routes import `bcryptjs`, which is not yet listed in
-> `package.json`. Until that is fixed, install it manually so auth doesn't crash:
->
-> ```bash
-> npm install bcryptjs
-> ```
+Create the environment files in the project root.
 
-Create environment files in the project root.
-
-`.env` (used by Prisma):
+`.env` (used by Prisma). With a connection-pooling provider like Supabase, use
+the pooled URL at runtime and a direct/session URL for migrations:
 
 ```env
-DATABASE_URL="postgresql://USER:PASSWORD@HOST:5432/DBNAME"
+# App runtime (e.g. Supabase transaction pooler, port 6543)
+DATABASE_URL="postgresql://USER:PASSWORD@HOST:6543/postgres?pgbouncer=true"
+# Migrations (e.g. Supabase session pooler / direct, port 5432)
+DIRECT_URL="postgresql://USER:PASSWORD@HOST:5432/postgres"
 ```
 
-`.env.local` (used by the story-generation API route):
+> If your database is a plain Postgres instance (not pooled), you can set both
+> `DATABASE_URL` and `DIRECT_URL` to the same standard connection string.
+
+`.env.local` (app secrets):
 
 ```env
 STORY_GENERATOR_API_KEY="your_openrouter_api_key_here"
+AUTH_SECRET="a_long_random_string"
 ```
+
+Generate an `AUTH_SECRET` with `openssl rand -base64 33` (or `npx auth secret`).
 
 Generate the Prisma client and apply the schema to your database:
 
 ```bash
 npx prisma generate
-npx prisma migrate dev
+npx prisma migrate deploy   # or: npx prisma migrate dev
 ```
 
 ---
@@ -105,17 +109,18 @@ Then open [http://localhost:3000](http://localhost:3000).
 
 ### Walkthrough
 
-1. From the landing page, click **"Start Creating Your Story"** (this goes to
-   `/generate-story`).
-2. Choose a **Genre** (e.g. Fantasy), a **Length** (Short / Medium / Long), and
-   type your story idea into **Story Content**.
-3. Click **Generate Story**. The app calls the API, saves the result, and
-   redirects you to `/book/[id]?mode=readAlong`.
-4. On the book page, use the text-to-speech controls to have the story read aloud.
+1. **Sign up** at `/signup`, then **log in** at `/login`. (You can generate as a
+   guest, but logging in ties stories to your account and keeps them permanently.)
+2. From the landing page, click **"Start Creating Your Story"** (`/generate-story`).
+3. Choose a **Genre**, a **Length** (Short / Medium / Long), and type your story
+   idea into **Story Content**.
+4. Click **Generate Story**. The app calls the model, saves the result, and
+   redirects you to `/book/[id]`.
+5. Read it in the open-book reader — turn pages with **Prev/Next**, or press
+   **Play** to have it narrated with synchronized highlighting.
+6. Visit **`/profile`** to see all stories tied to your account.
 
 ### Test prompts
-
-Use these to confirm everything works end to end:
 
 | Genre     | Length | Story Content                                                        |
 | --------- | ------ | ------------------------------------------------------------------- |
@@ -123,10 +128,6 @@ Use these to confirm everything works end to end:
 | Sci-Fi    | Medium | Two rival astronauts must cooperate after their station loses power. |
 | Children's| Short  | A shy hedgehog learns to make friends at the autumn festival.        |
 | Mystery   | Short  | A librarian notices the same book keeps returning itself overnight.  |
-
-A successful run lands you on a `/book/[id]` page showing a generated title and
-story body. If you only see a fallback `/book` page (no `[id]`), the database
-write failed — check the **Known Issues** below.
 
 ### Running with Docker (optional)
 
@@ -136,54 +137,37 @@ A `Dockerfile` and `compose.yaml` are included:
 docker compose up --build
 ```
 
-The app is served on port `3000`. You must still provide `DATABASE_URL` and
-`STORY_GENERATOR_API_KEY` (the compose file does not define a database service by
-default — uncomment the `db` block in `compose.yaml` or point at an external one).
+The app is served on port `3000`. You must still provide `DATABASE_URL`,
+`DIRECT_URL`, `STORY_GENERATOR_API_KEY`, and `AUTH_SECRET` (the compose file does
+not define a database service by default — uncomment the `db` block in
+`compose.yaml` or point at an external one).
+
+### Deploying
+
+When deploying (e.g. to Vercel), set `DATABASE_URL`, `DIRECT_URL`,
+`STORY_GENERATOR_API_KEY`, and `AUTH_SECRET` as environment variables. The build
+script runs `prisma migrate deploy`, so the database must be reachable at build
+time.
 
 ---
 
-## 4. Known Issues
+## 4. Known Issues / Limitations
 
-These are observable issues in the current codebase, roughly in order of severity:
-
-1. **Prisma schema does not match the code.**
-   `prisma/schema.prisma` defines the `Story` model with a required `userId`,
-   `content`, `genre`, `prompt`, and `ttsUrl`, and **no `body` or `expiresAt`
-   fields**. However, the API routes
-   ([generate-story/route.ts](src/app/api/generate-story/route.ts) and
-   [stories/route.ts](src/app/api/stories/route.ts)) write `{ title, body,
-   expiresAt }` and read `body`/`expiresAt`. As written this will fail TypeScript
-   compilation and/or the database insert, so story saving (and thus the
-   `/book/[id]` redirect) is broken until the schema and code are reconciled.
-
-2. **`bcryptjs` is not declared as a dependency.**
-   It is imported by [login/route.ts](src/app/api/login/route.ts) and
-   [signup/route.ts](src/app/api/signup/route.ts) but is missing from
-   `package.json`, so a clean `npm install` followed by using auth will fail.
-   (See the install note above.)
-
-3. **Authentication is incomplete.**
-   Login succeeds but no session/token is established or persisted, and stories
-   are not tied to a logged-in user (the API never sets `Story.userId`). There is
-   an `AuthContext`, but accounts are effectively cosmetic for now.
-
-4. **Next.js 15 async `params`.**
-   [stories/[id]/route.ts](src/app/api/stories/[id]/route.ts) reads `params.id`
-   synchronously. In Next.js 15 route `params` is a Promise and should be
-   awaited; this can produce warnings/errors.
-
-5. **Multiple Prisma client instances.**
-   The login and signup routes each call `new PrismaClient()` instead of reusing
-   the shared client in [src/lib/prismaClient.ts](src/lib/prismaClient.ts), which
-   can exhaust database connections in development with hot reload.
-
-6. **Debug logging in production paths.**
-   The generation and signup routes `console.log` prompt data, raw API
-   responses, and even `DATABASE_URL`. These should be removed before deploying.
-
-7. **Stories expire.**
-   Generated stories are stored with a TTL (~3 hours) and the `/book/[id]` page
-   returns `410 Gone` afterward, so shared links are intentionally short-lived.
+- **Free-model rate limits.** OpenRouter's free models are throttled upstream and
+  can return `429`. The fallback list mitigates this, but if every model in the
+  list is busy at once, generation can intermittently fail ("Error generating
+  story"). Retrying usually works; adding OpenRouter credits or your own provider
+  key removes the limit.
+- **Email verification is not implemented.** The signup form shows a disabled
+  "Verification Code" field and `User.isVerified` always stays `false`; there is
+  no email-sending or verification flow yet.
+- **"Read Myself" mode is not built.** `/book/[id]` renders the Read Along reader
+  regardless of the `mode` query param; a separate self-paced view is planned.
+- **Guest stories expire.** Stories created without logging in are stored with a
+  TTL and the `/book/[id]` page treats them as gone afterward. This is by design —
+  log in to keep stories permanently.
+- **TTS quality varies by browser.** Narration uses the browser's built-in Web
+  Speech API, so available voices and quality depend on the user's OS/browser.
 
 ---
 
