@@ -20,9 +20,6 @@ export async function POST(req: Request) {
   "story": "Generated story content..."
 }`;
 
-    // DEBUGGING PRINT OUT PROMPT DATA
-    console.log("Prompt Data:", promptData);
-
     // 3. Send the request to OpenRouter with the correct `messages` key
     const apiResponse = await axios.post(
       OPEN_ROUTER_API_URL,
@@ -37,9 +34,6 @@ export async function POST(req: Request) {
         },
       }
     );
-
-    // DEBUGGING PRINT OUT API RESPONSE
-    console.log("API Response:", apiResponse.data);
 
     // 4. Extract and parse the JSON string from the first choice
     const contentString = apiResponse.data?.choices?.[0]?.message?.content;
