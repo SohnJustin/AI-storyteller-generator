@@ -2,15 +2,14 @@
 "use client";
 import React from "react";
 import Link from "next/link";
-import { motion } from "framer-motion"; // If you choose to use Framer Motion
 
 const BookCover = ({ title }: { title: string }) => {
   return (
     <div style={styles.container}>
       {/* Book Cover */}
-      <motion.div style={styles.bookCover}>
+      <div style={styles.bookCover}>
         <h2 style={styles.title}>{title}</h2>
-      </motion.div>
+      </div>
 
       {/* Option Buttons */}
       <div style={styles.buttonContainer}>
